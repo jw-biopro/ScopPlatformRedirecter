@@ -94,24 +94,23 @@ class RequestSubscriber extends AbstractController implements EventSubscriberInt
         $redirects = $this->repository->search((new Criteria())->addFilter(new EqualsAnyFilter('sourceURL', $search))->addFilter(new EqualsFilter('enabled', true))->setLimit(1), $context);
         $redirectsUrl = $this->repository->search((new Criteria())->addFilter(new EqualsAnyFilter('sourceURL', $search))->setLimit(1), $context);
         $redirectsSeoUrl = $this->seoUrlRepository->search((new Criteria())->addFilter(new EqualsAnyFilter('seoPathInfo', $search))->setLimit(1), $context);
-        // No Redirect found for this URL, do nothing
+        
+        //No Redirect or Seo Url found, create it
         if ($redirectsUrl->count() === 0) {
             if ($redirectsSeoUrl->count() === 0){
-                $this->repository->create([['sourceURL' => "$storefrontUri$requestUri", 'targetURL' => 'http://localhost', 'httpCode' => 302, 'enabled' => false]], $context);
+                $this->repository->create([['sourceURL' => "$storefrontUri$requestUri", 'targetURL' => "$storefrontUri", 'httpCode' => 302, 'enabled' => false]], $context);
                 return;
             }
         }
-
+        
+        // No Redirect found for this URL, do nothing
         if ($redirects->count() === 0) {
             return;
         }
 
-
-        
         $redirect = $redirects->first();
         $targetURL = $redirect->getTargetURL();
         $code = $redirect->getHttpCode();
-        
         
         // Prevent endless redirecting when target url and source url have only different capitalisation
         if (in_array($targetURL, $search, true)) {
