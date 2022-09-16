@@ -95,11 +95,15 @@ class RequestSubscriber extends AbstractController implements EventSubscriberInt
         $redirectsUrl = $this->repository->search((new Criteria())->addFilter(new EqualsAnyFilter('sourceURL', $search))->setLimit(1), $context);
         $redirectsSeoUrl = $this->seoUrlRepository->search((new Criteria())->addFilter(new EqualsAnyFilter('seoPathInfo', $search))->setLimit(1), $context);
         
-        //No Redirect or Seo Url found, create it
-        if ($redirectsUrl->count() === 0) {
-            if ($redirectsSeoUrl->count() === 0){
-                $this->repository->create([['sourceURL' => "$storefrontUri$requestUri", 'targetURL' => "$storefrontUri", 'httpCode' => 302, 'enabled' => false]], $context);
-                return;
+        $statusCode = $event->getResponse()->getStatusCode();
+
+        if($statusCode >= 400 && $statusCode < 500){
+            //No Redirect or Seo Url found, create it
+            if ($redirectsUrl->count() === 0) {
+                if ($redirectsSeoUrl->count() === 0){
+                    $this->repository->create([['sourceURL' => "$storefrontUri$requestUri", 'targetURL' => "$storefrontUri", 'httpCode' => 302, 'enabled' => false]], $context);
+                    return;
+                }
             }
         }
         
